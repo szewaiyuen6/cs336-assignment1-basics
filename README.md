@@ -48,3 +48,7 @@ gunzip owt_valid.txt.gz
 cd ..
 ```
 
+### My notes
+uv pip compile pyproject.toml --output requirements.txt
+uv pip install -r requirements.txt
+

@@ -68,7 +68,7 @@ def process_chunk(chunk_range: Tuple[int, int], file_path: str, queue: Queue):
     queue.put(count_map)
 
 
-def pretokenize(file_path: str, num_processes: int):
+def pretokenize(file_path: str, num_processes: int) ->  dict[tuple[bytes], int]:
     with open(file_path, "rb") as f:
         boundaries = find_chunk_boundaries(f, num_processes, "<|endoftext|>".encode("utf-8"))
     
@@ -88,4 +88,11 @@ def pretokenize(file_path: str, num_processes: int):
         while not queue.empty():
             all_counts.append(queue.get())
 
-        return all_counts
+        # results are now in [{'fix': 5, 'aba': 4} , {'adv': 3}]
+        final_map = {}
+        for partial_map in all_counts:
+            for word in partial_map:
+                bytes_tuple = tuple(word.encode('utf-8'))
+                final_map[bytes_tuple] = final_map.get(bytes_tuple, 0) + partial_map[word] 
+
+        return final_map
