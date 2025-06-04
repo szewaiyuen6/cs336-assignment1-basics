@@ -1,4 +1,3 @@
-import regex as re
 from multiprocessing import Manager
 from collections import Counter
 from cs336_basics.pretokenization import (
@@ -7,7 +6,6 @@ from cs336_basics.pretokenization import (
     process_chunk,
 )
 
-PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
 
 def _serial_pretokenize(file_path: str, num_processes: int):
     with open(file_path, "rb") as f:
@@ -41,3 +39,20 @@ def test_pretokenize_matches_serial(tmp_path):
         return counter
 
     assert _aggregate(parallel_counts) == _aggregate(serial_counts)
+
+
+def test_find_chunk_boundaries_respects_special_tokens(tmp_path):
+    corpus = "Hello<|endoftext|>World<|endoftext|>Bye"
+    file_path = tmp_path / "corpus.txt"
+    file_bytes = corpus.encode("utf-8")
+    file_path.write_bytes(file_bytes)
+
+    with open(file_path, "rb") as f:
+        boundaries = find_chunk_boundaries(
+            f, desired_num_chunks=3, split_special_token=b"<|endoftext|>"
+        )
+
+    assert boundaries[0] == 0
+    assert boundaries[-1] == len(file_bytes)
+    for boundary in boundaries[1:-1]:
+        assert file_bytes.startswith(b"<|endoftext|>", boundary)
